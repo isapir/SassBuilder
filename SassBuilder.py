@@ -13,16 +13,19 @@ else:
 
 import sublime, sublime_plugin
 
-def fileInfo(filename):
+# Get path information from filename. Returns a dict of path, filename,
+# and extension.
+def pathinfo(filename):
 	path      = os.path.dirname(filename)
 	fileinfo  = os.path.splitext(filename)
 	filename  = fileinfo[0].split(os.sep)[-1] + fileinfo[1]
-	extension = fileinfo[1]
+	extension = fileinfo[1][1:]
 	return {"path": path, "filename": filename, "extension": extension}
 
-def builderSettings(fileinfo):
+# Load .sassbuilder-config file from the .sass/.scss directory
+def builderSettings(pathinfo):
 	try:
-		fh = open(os.path.join(fileinfo["path"], ".sassbuilder-config"))
+		fh = open(os.path.join(pathinfo["path"], ".sassbuilder-config"))
 		settings = json.loads(fh.read())
 		fh.close()
 		return settings
@@ -31,10 +34,11 @@ def builderSettings(fileinfo):
 			+ "file. Please create one with Tools->Create SASS Builder.")
 		return
 
-def compile(fileinfo, outputpath, options):
+# Parse the sass command and calls it using subprocess.Popen.
+def compile(pathinfo, outputpath, options):
 
 	output = os.path.join(outputpath,
-		fileinfo['filename'].replace(fileinfo['extension'], ".css"))
+		pathinfo['filename'].replace(pathinfo['extension'], "css"))
 
 	cmd  = "sass --update '{0}':'{1}' --stop-on-error{2} --style {3} --trace"
 
@@ -48,7 +52,7 @@ def compile(fileinfo, outputpath, options):
 	if options[4]['line-comments'] == True:
 		sass += " --line-comments"
 
-	cmd = cmd.format(fileinfo['filename'], output, sass, options[1]['style'])
+	cmd = cmd.format(pathinfo['filename'], output, sass, options[1]['style'])
 
 	proc = subprocess.Popen(cmd, shell=True, cwd=fileinfo['path'],
 		stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -59,19 +63,20 @@ def compile(fileinfo, outputpath, options):
 	if errs:
 		print errs
 		sublime.error_message("There was an error compiling your file.\n" +
-			"Please refer to the command console, Ctrl+`.")
+			"Please refer to the command console, Ctrl + `.")
 
 class SassBuilderCommand(sublime_plugin.EventListener):
 
 	def on_post_save(self, view):
 
-		fileinfo = fileInfo(view.file_name())
-		scope    = "source" + fileinfo['extension']
+		pathinfo = pathinfo(view.file_name())
+		scope    = "source." + pathinfo['extension']
 
 		if scope == "source.scss" or scope == "source.sass":
-			settings   = builderSettings(fileinfo)
-			outputpath = os.path.normpath(fileinfo['path'] + settings['output'])
-			view.run_command("show_panel", {"panel": "test_panel"})
+			# Only run if scope is sass or scss. Load .sassbuilder-config file,
+			# normalize the output path, and call sass.
+			settings   = builderSettings(pathinfo)
+			outputpath = os.path.normpath(pathinfo['path'] + settings['output'])
 			t = Thread(target=compile,
-				args=(fileinfo, outputpath, settings['options']))
+				args=(pathinfo, outputpath, settings['options']))
 			t.start()
