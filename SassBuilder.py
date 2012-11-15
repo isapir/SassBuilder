@@ -22,7 +22,7 @@ def fileInfo(filename):
 
 def builderSettings(fileinfo):
 	try:
-		fh = open(fileinfo["path"] + os.sep + ".sassbuilder-config")
+		fh = open(os.path.join(fileinfo["path"], ".sassbuilder-config"))
 		settings = json.loads(fh.read())
 		fh.close()
 		return settings
