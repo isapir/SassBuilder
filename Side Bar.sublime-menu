@@ -1,7 +1,7 @@
 [
-    { "caption": "-" },
-    {
-        "caption": "Create SASS Builder",
-        "command": "sass_builder_create", "args": { "paths": [] }
-    }
+	{ "caption": "-" },
+	{
+		"caption": "Create SASS Builder",
+		"command": "sass_builder_create", "args": { "paths": [] }
+	}
 ]

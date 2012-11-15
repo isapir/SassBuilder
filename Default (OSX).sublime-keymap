@@ -1,5 +1,5 @@
 [
-    {
-        "keys": ["super+b", "super+s"], "command": "sass_builder_create"
-    }
+	{
+		"keys": ["super+b", "super+s"], "command": "sass_builder_create"
+	}
 ]

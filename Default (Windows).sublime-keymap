@@ -1,5 +1,5 @@
 [
-    {
-        "keys": ["ctrl+b", "ctrl+s"], "command": "sass_builder_create"
-    }
+	{
+		"keys": ["ctrl+b", "ctrl+s"], "command": "sass_builder_create"
+	}
 ]
