@@ -1,0 +1,12 @@
+[
+	{
+		"id": "tools",
+		"caption": "Tools",
+		"children": [
+			{
+				"caption": "Create SASS Builder",
+				"command": "sass_builder_create"
+			}
+		]
+	}
+]

@@ -1,0 +1,20 @@
+{
+    "schema_version": "1.2",
+    "packages": [
+        {
+            "name": "SassBuilder",
+            "description": "Sass compiler for Sublime Text that reads a source folrder config file.",
+            "author": "Nathan Lucas",
+            "homepage": "https://github.com/bnlucas/SassBuilder",
+            "last_modified": "2012-11-15 03:21:48",
+            "platforms": {
+                "*": [
+                    {
+                        "version": "1.0.0",
+                        "url": "https://github.com/bnlucas/SassBuilder/archive/master.zip"
+                    }
+                ]
+            }
+        }
+    ]
+}
