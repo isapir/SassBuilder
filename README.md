@@ -17,7 +17,7 @@ The .sassbuilder-config file
 ============================
 ```json
 {
- "output": "/path/to/compiled/css",
+	"output": "/path/to/compiled/css",
 	"options": [
 		{
 			"cache"         : true
