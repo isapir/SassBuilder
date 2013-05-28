@@ -9,7 +9,7 @@ The plugin works on post save of a .sass/.scss file in Sublime Text.
 
 * Automatically runs on save.
 * Create .sassbuilder-config files with ease
-  * Tools->Create SASS Builder
+  * Tools->Sass Builder Config
   * Ctrl+B + Ctrl+S keystroke
   * Right-click a folder or folders in the side bar.
 
@@ -17,19 +17,13 @@ The .sassbuilder-config file
 ============================
 ```json
 {
-	"output": "/path/to/compiled/css",
-	"options": [
-		{
-			"cache"         : true
-		},{
-			"style"         : "nested"
-		},{
-			"debug"         : true
-		},{
-			"line-numbers"  : true
-		},{
-			"line-comments" : true
-		}
-	]
+	"output_path": "/path/to/compiled/css",
+	"options": {
+		"cache":         true,
+		"debug":         true,
+		"line-comments": true,
+		"line-numbers":  true,
+		"style":         "nested"
+	}
 }
 ```
