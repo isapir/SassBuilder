@@ -26,8 +26,6 @@ class SassBuilderCreateCommand(sublime_plugin.WindowCommand):
 
 					view = self.window.open_file(filename)
 					view.set_syntax_file('Packages/Javascript/JSON.tmLanguage')
-
-					view.run_command('insert_snippet', {'contents': skeleton})
 		else:
 			view = self.window.new_file()
 			view.settings().set('default_dir', self.window.folders()[0])
