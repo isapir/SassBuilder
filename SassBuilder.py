@@ -28,12 +28,7 @@ def builder(path):
 			content = f.read()
 		return json.loads(content)
 	except:
-		err = [
-			'Your directory is missing a .sassbuilder-config file. Please',
-			' create one with Tools->Create SASS Builder.'
-		]
-		sublime.error_message(''.join(err))
-		return
+		return None
 
 def compile(info, output, options):
 	output_path = os.path.join(output, info['name'].replace(info['ext'], 'css'))
@@ -70,8 +65,9 @@ class SassBuilderCommand(sublime_plugin.EventListener):
 
 		if scope == 'source.scss' or scope == 'source.sass':
 			settings = builder(info['path'])
-			output   = get_output_path(info['path'], settings['output_path'])
+			if settings:
+				output   = get_output_path(info['path'], settings['output_path'])
 
-			t = Thread(target=compile,
-				args=(info, output, settings['options']))
-			t.start()
+				t = Thread(target=compile,
+					args=(info, output, settings['options']))
+				t.start()
