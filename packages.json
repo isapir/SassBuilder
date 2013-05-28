@@ -6,11 +6,11 @@
 			"description": "Sass compiler for Sublime Text that reads a source folrder config file.",
 			"author": "Nathan Lucas",
 			"homepage": "https://github.com/bnlucas/SassBuilder",
-			"last_modified": "2012-11-15 08:05:29",
+			"last_modified": "2013-05-27 23:19:00",
 			"platforms": {
 				"*": [
 					{
-						"version": "1.0.0",
+						"version": "2.0.0",
 						"url": "https://github.com/bnlucas/SassBuilder/archive/master.zip"
 					}
 				]
