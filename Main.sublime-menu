@@ -4,7 +4,7 @@
 		"caption": "Tools",
 		"children": [
 			{
-				"caption": "Create SASS Builder",
+				"caption": "Sass Builder Config",
 				"command": "sass_builder_create"
 			}
 		]

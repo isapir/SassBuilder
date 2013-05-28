@@ -1,82 +1,77 @@
-import json
-import os
-import subprocess
-import sys
-from threading import Thread
-
-if sys.version_info > (2, 7, 0):
-	import json
-	from collections import OrderedDict
-else:
-	import simplejson as json
-	from simplejson import OrderedDict
-
 import sublime, sublime_plugin
 
-# Get path information from filename. Returns a dict of path, filename,
-# and extension.
-def pathinfo(filename):
-	path      = os.path.dirname(filename)
-	fileinfo  = os.path.splitext(filename)
-	filename  = fileinfo[0].split(os.sep)[-1] + fileinfo[1]
-	extension = fileinfo[1][1:]
-	return {"path": path, "filename": filename, "extension": extension}
+import json
+import os
 
-# Load .sassbuilder-config file from the .sass/.scss directory
-def builderSettings(pathinfo):
+from threading import Thread
+from subprocess import PIPE, Popen
+
+def get_path_info(file):
+	path      = os.path.dirname(file)
+	fileinfo  = os.path.splitext(file)
+
+	filename  = ''.join([fileinfo[0].split(os.sep)[-1], fileinfo[1]])
+	extension = fileinfo[1][1:]
+
+	return {
+		'path': path,
+		'name':	filename,
+		'ext':  extension,
+	}
+
+def get_output_path(scss_path, css_path):
+	return os.path.normpath(''.join([scss_path, os.sep, css_path]))
+
+def builder(path):
 	try:
-		fh = open(os.path.join(pathinfo["path"], ".sassbuilder-config"))
-		settings = json.loads(fh.read())
-		fh.close()
-		return settings
-	except IOError as e:
-		sublime.error_message("Your directory is missing a .sassbuilder-config"
-			+ "file. Please create one with Tools->Create SASS Builder.")
+		with open(os.sep.join([path, '.sassbuilder-config']), 'r') as f:
+			content = f.read()
+		return json.loads(content)
+	except:
+		err = [
+			'Your directory is missing a .sassbuilder-config file. Please',
+			' create one with Tools->Create SASS Builder.'
+		]
+		sublime.error_message(''.join(err))
 		return
 
-# Parse the sass command and calls it using subprocess.Popen.
-def compile(pathinfo, outputpath, options):
+def compile(info, output, options):
+	output_path = os.path.join(output, info['name'].replace(info['ext'], 'css'))
 
-	output = os.path.join(outputpath,
-		pathinfo['filename'].replace(pathinfo['extension'], "css"))
+	cmd = 'sass --update \'{s}\':\'{o}\' --stop-on-error {r} --style {l} --trace'
 
-	cmd  = "sass --update '{0}':'{1}' --stop-on-error{2} --style {3} --trace"
+	rules = []
+	if not options['cache']:
+		rules.append('--no-cache')
+	if options['debug']:
+		rules.append('--debug-info')
+	if options['line-comments']:
+		rules.append('--line-comments')
+	if options['line-numbers']:
+		rules.append('--line-numbers')
+	rules = ' '.join(rules)
 
-	sass = ""
-	if options[0]["cache"] == False:
-		sass += " --no-cache"
-	if options[2]['debug'] == True:
-		sass += " --debug-info"
-	if options[3]['line-numbers'] == True:
-		sass += " --line-numbers"
-	if options[4]['line-comments'] == True:
-		sass += " --line-comments"
+	cmd = cmd.format(s=info['name'], o=output_path, r=rules, l=options['style'])
 
-	cmd = cmd.format(pathinfo['filename'], output, sass, options[1]['style'])
-
-	proc = subprocess.Popen(cmd, shell=True, cwd=fileinfo['path'],
-		stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-	outs, errs = proc.communicate()
-	if outs:
-		sublime.message_dialog(output + " has been compiled.")
-	if errs:
-		print errs
-		sublime.error_message("There was an error compiling your file.\n" +
-			"Please refer to the command console, Ctrl + `.")
+	proc = Popen(cmd, shell=True, cwd=info['path'], stdout=PIPE, stderr=PIPE)
+	out, err = proc.communicate()
+	if out:
+		sublime.message_dialog('{f} has been compiled.'.format(f=output_path))
+	if err:
+		print err
+		sublime.error_message('Sass Error: Hit \'ctrl+`\' to see errors.')
 
 class SassBuilderCommand(sublime_plugin.EventListener):
 
 	def on_post_save(self, view):
 
-		pathinfo = pathinfo(view.file_name())
-		scope    = "source." + pathinfo['extension']
+		info  = get_path_info(view.file_name())
+		scope = '.'.join(['source', info['ext']])
 
-		if scope == "source.scss" or scope == "source.sass":
-			# Only run if scope is sass or scss. Load .sassbuilder-config file,
-			# normalize the output path, and call sass.
-			settings   = builderSettings(pathinfo)
-			outputpath = os.path.normpath(pathinfo['path'] + settings['output'])
+		if scope == 'source.scss' or scope == 'source.sass':
+			settings = builder(info['path'])
+			output   = get_output_path(info['path'], settings['output_path'])
+
 			t = Thread(target=compile,
-				args=(pathinfo, outputpath, settings['options']))
+				args=(info, output, settings['options']))
 			t.start()
