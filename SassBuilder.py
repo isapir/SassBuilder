@@ -54,7 +54,7 @@ def get_files_to_compile(file_info):
 
 def builder(path):
 	try:
-		with open(os.sep.join([path, '.sassbuilder-config.json']), 'r') as f:
+		with open(os.sep.join([path, '.sassbuilder-config']), 'r') as f:
 			content = f.read()
 		return json.loads(content)
 	except:
