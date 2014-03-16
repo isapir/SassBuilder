@@ -107,9 +107,3 @@ class SassBuilderCommand(sublime_plugin.EventListener):
 			t = Thread(target=compile,
 				args=(files_to_compile, settings['output_path'], settings['options']))
 			t.start()
-
-
-
-
-
-
