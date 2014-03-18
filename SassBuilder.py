@@ -38,9 +38,9 @@ def get_sass_files_using_partial(path, partial_name):
 	if not out:
 		return
 
-	files_names = [f for f in out.split() if not f.startswith('_')]
 	files = []
-	for f in files_names:
+	out = out.decode('utf8')
+	for f in out.split():
 		files.append({
 			"path": path,
 			"name": f,
