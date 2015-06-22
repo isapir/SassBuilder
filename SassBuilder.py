@@ -158,5 +158,6 @@ class SassBuilderCommand(sublime_plugin.EventListener):
             print('SassBuilder started.')
             files = get_files(info, settings['project_path'])
 
-            t = Thread(target=compile_sass, args=(files, settings))
-            t.start()
+            #t = Thread(target=compile_sass, args=(files, settings))
+            #t.start()
+            compile_sass(files, settings)
