@@ -2,8 +2,9 @@ import sublime, sublime_plugin
 
 import os
 
-skeleton = """{
-	"output_path": "/path/to/compiled/css",
+skeleton = '''{
+    "project_path": "/path/to/scss",
+	"output_path": "/path/to/css",
 	"options": {
 		"cache":         true,
 		"debug":         true,
@@ -11,7 +12,7 @@ skeleton = """{
 		"line-numbers":  true,
 		"style":         "nested"
 	}
-}"""
+}'''
 
 class SassBuilderCreateCommand(sublime_plugin.WindowCommand):
 
@@ -19,7 +20,7 @@ class SassBuilderCreateCommand(sublime_plugin.WindowCommand):
 		if len(paths) != 0:
 			for path in paths:
 				if os.path.isdir(path):
-					filename = os.path.join(path, '.sassbuilder-config')
+					filename = os.path.join(path, '.sassbuilder-config.json')
 
 					with open(filename, 'w+') as f:
 						f.write(skeleton)

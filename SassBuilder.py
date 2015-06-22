@@ -2,108 +2,161 @@ import sublime, sublime_plugin
 
 import json
 import os
+import re
 
 from functools import partial
 from threading import Thread
 from subprocess import PIPE, Popen
 
-FILE_EXTENTIONS = ('scss', 'sass')
 
-def get_path_info(file):
-	path      = os.path.dirname(file)
-	fileinfo  = os.path.splitext(file)
+SASS_EXTENSIONS = ('.scss', '.sass')
 
-	filename  = ''.join([fileinfo[0].split(os.sep)[-1], fileinfo[1]])
-	extension = fileinfo[1][1:]
 
-	return {
-		'path': path,
-		'name':	filename,
-		'ext':  extension,
-	}
+def which(executable):
+    for path in os.environ['PATH'].split(os.pathsep):
+        path = path.strip('"')
 
-def get_output_path(scss_path, css_path):
-	return os.path.normpath(''.join([scss_path, os.sep, css_path]))
+        fpath = os.path.join(path, executable)
 
-def get_sass_files_using_partial(path, partial_name):
-	partial_name = ''.join(partial_name[1:].split('.')[:-1])
-	cmd = "grep -E '@import.*{0}' * -l".format(partial_name)
-	proc = Popen(cmd, shell=True, cwd=path, stdout=PIPE, stderr=PIPE)
-	out, err = proc.communicate()
-	if err:
-		print(err)
-		sublime.error_message('Sass Error: Hit \'ctrl+`\' to see errors.')
-		return
+        if os.path.isfile(fpath) and os.access(fpath, os.X_OK):
+            return fpath
 
-	if not out:
-		return
+    if os.name == 'nt' and not executable.endswith('.exe'):
+        return which('{}.exe'.format(executable))
 
-	files = []
-	out = out.decode('utf8')
-	for f in out.split():
-		files.append({
-			"path": path,
-			"name": f,
-			"ext": f.split('.')[-1]})
-	return files
+    return None
 
-def get_files_to_compile(file_info):
-	if file_info['name'].startswith('_'):
-		return get_sass_files_using_partial(file_info['path'], file_info['name'])
-	return [file_info]
 
-def builder(path):
-	try:
-		with open(os.sep.join([path, '.sassbuilder-config']), 'r') as f:
-			content = f.read()
-		return json.loads(content)
-	except:
-		return None
+def path_info(path):
+    root = os.path.dirname(path)
+    name = os.path.splitext(os.path.basename(path))[0]
+    extn = os.path.splitext(path)[1]
 
-def compile(files_info, output, options):
-	compiled_files = []
-	for info in files_info:	
-		compiled_path = os.path.join(output,
-			info['name'].replace(info['ext'], 'css'))
+    return {'root': root, 'name': name, 'extn': extn, 'path': path}
 
-		cmd = 'sass --update \'{s}\':\'{o}\' --stop-on-error {r} --style {l}'
 
-		rules = ['--trace']
-		if not options['cache']:
-			rules.append('--no-cache')
-		if options['debug']:
-			rules.append('--debug-info')
-		if options['line-comments']:
-			rules.append('--line-comments')
-		if options['line-numbers']:
-			rules.append('--line-numbers')
-		rules = ' '.join(rules)
+def find_files(pattern, path):
+    pattern = re.compile(pattern)
+    found = []
+    path = os.path.realpath(path)
 
-		cmd = cmd.format(s=info['name'], o=compiled_path, r=rules, l=options['style'])
+    for root, dirnames, files in os.walk(path):
+        for fname in files:
+            if fname.endswith(SASS_EXTENSIONS):
+                with open(os.path.join(root, fname), 'r') as f:
+                    if any(pattern.search(line) for line in f):
+                        found.append(os.path.join(root, fname))
+                        break
+    
+    return found
 
-		proc = Popen(cmd, shell=True, cwd=info['path'], stdout=PIPE, stderr=PIPE)
-		out, err = proc.communicate()
-		if out:
-			compiled_files.append(info['name'])
 
-		if err:
-			print(err)
-			sublime.error_message('Sass Error: Hit \'ctrl+`\' to see errors.')
-			return
+def grep_files(pattern, path):
+    path = os.path.realpath(path)
+    grep = '''grep -E "{}" * -lr'''.format(pattern)
 
-	msg = '{f} has been compiled.'.format(f=", ".join(compiled_files))
-	sublime.set_timeout(partial(sublime.message_dialog, msg), 200)
+    proc = Popen(grep, shell=True, cwd=path, stdout=PIPE, stderr=PIPE)
+
+    out, err = proc.communicate()
+
+    if err:
+        print(err)
+        sublime.error_message('SassBuilder: Hit \'ctrl+`\' to see errors.')
+
+    if not out:
+        return None
+
+    out = out.decode('utf8')
+    found = []
+    for f in out.split():
+        if f.endswith(SASS_EXTENSIONS):
+            found.append(os.path.join(path, f))
+
+    return found
+
+
+def get_partial_files(info, project_path):
+    pattern = '''@import.*{}'''.format(info['name'][1:])
+
+    if which('grep'):
+        return grep_files(pattern, project_path)
+
+    return find_files(pattern, project_path)
+
+
+def get_files(info, project_path):
+    if info['name'].startswith('_'):
+        return get_partial_files(info, project_path)
+    return [info['path']]
+
+
+def load_settings(project_path):
+    try:
+        with open(os.sep.join([project_path, '.sassbuilder-config.json']), 'r') as f:
+            data = f.read()
+        return json.loads(data)
+    except:
+        return None
+
+
+def compile_sass(files, settings):
+    compiled_files = []
+    for f in files:
+        info = path_info(f)
+
+        srcp = os.path.join(info['root'], settings['output_path'])
+        name = '.'.join([info['name'], 'css'])
+
+        path = os.path.join(srcp, name)
+
+        sass = 'sass --update \'{}\':\'{}\' --stop-on-error --trace {} ' \
+               '--style {}'
+
+        rules = []
+
+        if not settings['options']['cache']:
+            rules.append('--no-cache')
+
+        if settings['options']['debug']:
+            rules.append('--debug-info')
+
+        if settings['options']['line-comments']:
+            rules.append('--line-comments')
+
+        if settings['options']['line-numbers']:
+            rules.append('--line-numbers')
+
+        rules = ' '.join(rules)
+
+        sass = sass.format(info['path'], path, rules,
+                           settings['options']['style'])
+
+        sass = Popen(sass, shell=True, cwd=info['root'], stdout=PIPE, stderr=PIPE)
+
+        out, err = sass.communicate()
+        if out:
+            compiled_files.append(name)
+
+        if err:
+            print(err)
+            sublime.error_message('SassBuilder: Hit \'ctrl+`\' to see errors.')
+            return
+
+    print('{} has been compiled.'.format(', '.join(compiled_files)))
 
 
 class SassBuilderCommand(sublime_plugin.EventListener):
 
-	def on_post_save(self, view):
-		info  = get_path_info(view.file_name())
-		settings = builder(info['path'])
+    def on_post_save(self, view):
+        info = path_info(view.file_name())
+        settings = load_settings(info['root'])
 
-		if info['ext'] in FILE_EXTENTIONS and settings:
-			files_to_compile = get_files_to_compile(info)
+        if not settings:
+            return None
 
-			t = Thread(target=compile,
-				args=(files_to_compile, settings['output_path'], settings['options']))
-			t.start()
+        if info['extn'] in SASS_EXTENSIONS:
+            print('SassBuilder started.')
+            files = get_files(info, settings['project_path'])
+
+            t = Thread(target=compile_sass, args=(files, settings))
+            t.start()
