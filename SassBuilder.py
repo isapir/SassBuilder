@@ -1,5 +1,6 @@
 import sublime, sublime_plugin
 
+import codecs
 import json
 import os
 import re
@@ -43,7 +44,7 @@ def find_files(pattern, path):
     for root, dirnames, files in os.walk(path):
         for fname in files:
             if fname.endswith(SASS_EXTENSIONS):
-                with open(os.path.join(root, fname), 'r') as f:
+                with codecs.open(os.path.join(root, fname), 'r', "utf-8") as f:
                     if any(pattern.search(line) for line in f):
                         found.append(os.path.join(root, fname))
                         break
