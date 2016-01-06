@@ -110,8 +110,8 @@ def compile_sass(files, settings):
 
         path = os.path.join(srcp, name)
 
-        sass = 'sass --update \'{}\':\'{}\' --stop-on-error --trace {} ' \
-               '--style {}'
+        sass = 'sass --update \'{0}\':\'{1}\' --stop-on-error --trace {2} ' \
+               '--style {3}'
 
         rules = []
 
@@ -143,7 +143,7 @@ def compile_sass(files, settings):
             sublime.error_message('SassBuilder: Hit \'ctrl+`\' to see errors.')
             return
 
-    print('{} has been compiled.'.format(', '.join(compiled_files)))
+    print('{0} has been compiled.'.format(', '.join(compiled_files)))
 
 
 class SassBuilderCommand(sublime_plugin.EventListener):
