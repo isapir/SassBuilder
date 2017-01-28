@@ -47,3 +47,34 @@ The .sassbuilder-config file
 ```
 
 [w]: https://gist.github.com/bnlucas/a23105c69132ab9e5fe9
+
+Install with Sublime Package Control
+============================
+1. Add this repo using "Package Control: Add Repository" https://github.com/bnlucas/SassBuilder
+2. You can then add this package using Package Control as usual. Find "Package Control: Add Package" and search for "Sass Builder"
+
+
+Known Issues on Mac
+============================
+For some users, you may receive this error:
+```
+b'/bin/sh: sass: command not found\n'
+```
+This is because:
+> 'There is a breakage or removal of environment variable functionality in launchd.conf for users of OS X 10.10 (Yosemite) and above.'
+
+-Source https://support.enthought.com/hc/en-us/articles/204469160-How-do-I-set-PYTHONPATH-and-other-environment-variables-for-Canopy-
+
+You can either follow the instructions to add the path to your executable to your PYTHONPATH as detailed in the link above or follow these steps:
+
+1. Install the "PackageResourceViewer" package to sublime using Package Control, then open this plugin within sublime.
+2. Edit SassBuilder.py line 113 changing
+```
+sass = 'sass --update \'{0}\':\'{1}\' --stop-on-error --trace {2} ' \
+               '--style {3}'
+```
+to
+```
+sass = '/usr/local/bin/sass --update \'{0}\':\'{1}\' --stop-on-error --trace {2} ' \
+               '--style {3}'
+```
