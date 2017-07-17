@@ -51,7 +51,7 @@ The .sassbuilder-config file
 Install with Sublime Package Control
 ============================
 1. Add this repo using "Package Control: Add Repository" https://github.com/bnlucas/SassBuilder
-2. You can then add this package using Package Control as usual. Find "Package Control: Add Package" and search for "Sass Builder"
+2. You can then add this package using Package Control as usual. Find "Package Control: Install Package" and search for "SassBuilder"
 
 
 Known Issues on Mac
